@@ -36,26 +36,24 @@ class UserSerializer(serializers.ModelSerializer):
         return password
 
     def validate(self, attrs):
-        if type(self.initial_data.get("age")) is not int:
+        initial_data = getattr(self, "initial_data", {})
+
+        if type(initial_data.get("age")) is not int:
             raise serializers.ValidationError(
                 {
                     "age": "Age must be an integer.",
                 }
             )
-        if type(self.initial_data.get("can_be_contacted")) is not bool:
+        if type(initial_data.get("can_be_contacted")) is not bool:
             raise serializers.ValidationError(
                 {
-                    "can_be_contacted": (
-                        "Consent to be contacted must be a boolean value."
-                    ),
+                    "can_be_contacted": ("Consent to be contacted must be a boolean value."),
                 }
             )
-        if type(self.initial_data.get("can_data_be_shared")) is not bool:
+        if type(initial_data.get("can_data_be_shared")) is not bool:
             raise serializers.ValidationError(
                 {
-                    "can_data_be_shared": (
-                        "Consent to share data must be a boolean value."
-                    ),
+                    "can_data_be_shared": ("Consent to share data must be a boolean value."),
                 }
             )
 
@@ -67,3 +65,35 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "age",
+            "can_be_contacted",
+            "can_data_be_shared",
+        ]
+        read_only_fields = ["id"]
+
+    def validate(self, attrs):
+        initial_data = getattr(self, "initial_data", {})
+
+        if "age" in initial_data and type(initial_data["age"]) is not int:
+            raise serializers.ValidationError(
+                {
+                    "age": "Age must be an integer.",
+                }
+            )
+        if "can_be_contacted" in initial_data and type(initial_data["can_be_contacted"]) is not bool:
+            raise serializers.ValidationError(
+                {"can_be_contacted": ("Consent to be contacted must be a boolean value.")}
+            )
+        if "can_data_be_shared" in initial_data and type(initial_data["can_data_be_shared"]) is not bool:
+            raise serializers.ValidationError(
+                {"can_data_be_shared": ("Consent to share data must be a boolean value.")}
+            )
+        return attrs
