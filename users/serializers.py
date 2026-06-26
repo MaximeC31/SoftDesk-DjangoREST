@@ -47,13 +47,17 @@ class UserSerializer(serializers.ModelSerializer):
         if type(initial_data.get("can_be_contacted")) is not bool:
             raise serializers.ValidationError(
                 {
-                    "can_be_contacted": ("Consent to be contacted must be a boolean value."),
+                    "can_be_contacted": (
+                        "Consent to be contacted must be a boolean value."
+                    ),
                 }
             )
         if type(initial_data.get("can_data_be_shared")) is not bool:
             raise serializers.ValidationError(
                 {
-                    "can_data_be_shared": ("Consent to share data must be a boolean value."),
+                    "can_data_be_shared": (
+                        "Consent to share data must be a boolean value."
+                    ),
                 }
             )
 
@@ -88,12 +92,26 @@ class ProfileSerializer(serializers.ModelSerializer):
                     "age": "Age must be an integer.",
                 }
             )
-        if "can_be_contacted" in initial_data and type(initial_data["can_be_contacted"]) is not bool:
+        if (
+            "can_be_contacted" in initial_data
+            and type(initial_data["can_be_contacted"]) is not bool
+        ):
             raise serializers.ValidationError(
-                {"can_be_contacted": ("Consent to be contacted must be a boolean value.")}
+                {
+                    "can_be_contacted": (
+                        "Consent to be contacted must be a boolean value."
+                    )
+                }
             )
-        if "can_data_be_shared" in initial_data and type(initial_data["can_data_be_shared"]) is not bool:
+        if (
+            "can_data_be_shared" in initial_data
+            and type(initial_data["can_data_be_shared"]) is not bool
+        ):
             raise serializers.ValidationError(
-                {"can_data_be_shared": ("Consent to share data must be a boolean value.")}
+                {
+                    "can_data_be_shared": (
+                        "Consent to share data must be a boolean value."
+                    )
+                }
             )
         return attrs
