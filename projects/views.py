@@ -1,4 +1,5 @@
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -7,18 +8,64 @@ from .models import Contributor, Project
 from .serializers import ContributorSerializer, ProjectSerializer
 
 
-@api_view(["POST"])
+@api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def project_collection_view(request):
-    serializer = ProjectSerializer(data=request.data)
 
-    if not serializer.is_valid():
-        return Response(serializer.errors, status=400)
+    match request.method:
+        case "GET":
+            projects = (
+                Project.objects.filter(
+                    contributor__user=request.user,
+                )
+                .select_related("author")
+                .order_by("-created_time")
+            )
 
-    project_instance = serializer.save(author=request.user)
-    Contributor.objects.create(user=request.user, project=project_instance)
+            paginator = PageNumberPagination()
+            paginator.page_size = 10
+            paginated_projects = paginator.paginate_queryset(projects, request)
 
-    return Response(ProjectSerializer(project_instance).data, status=201)
+            serializer = ProjectSerializer(paginated_projects, many=True)
+            return paginator.get_paginated_response(serializer.data)
+
+        case "POST":
+            serializer = ProjectSerializer(data=request.data)
+
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=400)
+
+            project_instance = serializer.save(author=request.user)
+            Contributor.objects.create(
+                user=request.user,
+                project=project_instance,
+            )
+
+            return Response(
+                ProjectSerializer(project_instance).data,
+                status=201,
+            )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def project_detail_view(request, project_id):
+    try:
+        project = Project.objects.get(id=project_id)
+    except Project.DoesNotExist:
+        return Response({"detail": "Project not found."}, status=404)
+
+    contributor = Contributor.objects.filter(
+        user=request.user,
+        project=project,
+    ).first()
+    if contributor is None:
+        return Response(
+            {"detail": "You are not a contributor to this project."},
+            status=403,
+        )
+
+    return Response(ProjectSerializer(project).data, status=200)
 
 
 @api_view(["GET", "POST"])

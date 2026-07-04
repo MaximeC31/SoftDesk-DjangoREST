@@ -3,10 +3,16 @@ from .views import (
     project_collection_view,
     project_contributors_collection_view,
     project_contributor_detail_view,
+    project_detail_view,
 )
 
 urlpatterns = [
-    path("projects/", project_collection_view, name="project-list-create"),
+    path("projects/", project_collection_view, name="project_collection_view"),
+    path(
+        "projects/<int:project_id>/",
+        project_detail_view,
+        name="project_detail_view",
+    ),
     path(
         "projects/<int:project_id>/contributors/",
         project_contributors_collection_view,
