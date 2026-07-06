@@ -25,15 +25,17 @@ class IssueSerializer(ModelSerializer):
         project = self.context["project"]
         assignee = attrs.get("assignee")
 
-        if assignee is not None:
-            is_project_contributor = Contributor.objects.filter(
-                user=assignee,
-                project=project,
-            ).exists()
-            if not is_project_contributor:
-                raise serializers.ValidationError(
-                    "This user is not a contributor to this project."
-                )
+        if assignee is None:
+            return attrs
+
+        is_project_contributor = Contributor.objects.filter(
+            user=assignee,
+            project=project,
+        ).exists()
+
+        if not is_project_contributor:
+            raise serializers.ValidationError("This user is not a contributor to this project.")
+
         return attrs
 
     def create(self, validated_data):
