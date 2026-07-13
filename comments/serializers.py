@@ -1,7 +1,25 @@
-# PSEUDOCODE ONLY — no executable serializer code yet.
-# Goal: validate comment creation and updates.
-# Comment creation input: description.
-# Issue should come from the route context, not arbitrary client input.
-# Author should be the authenticated user, never client-provided.
-# Reject creation when the user is not a contributor of the issue project.
-# Expose UUID, description, author, issue, and created_time in responses.
+from rest_framework import serializers
+from .models import Comment
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = [
+            "id",
+            "description",
+            "issue",
+            "author",
+            "created_time",
+        ]
+        read_only_fields = ["id", "issue", "author", "created_time"]
+
+    def create(self, validated_data):
+        issue = self.context["issue"]
+        author = self.context["request"].user
+        comment = Comment.objects.create(
+            issue=issue,
+            author=author,
+            **validated_data,
+        )
+        return comment

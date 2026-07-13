@@ -1,6 +1,20 @@
-# PSEUDOCODE ONLY — no executable model code yet.
-# Goal: define Comment resources linked to issues.
-# Fields: uuid identifier, description, issue, author, created_time.
-# Generate UUID automatically for stable external comment references.
-# A comment belongs to one issue, and an issue can have many comments.
-# Author should be the authenticated user who creates the comment.
+import uuid
+
+from django.conf import settings
+from django.db import models
+
+
+class Comment(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    description = models.TextField()
+    issue = models.ForeignKey(
+        "issues.Issue",
+        on_delete=models.CASCADE,
+        related_name="comments",
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="comments",
+    )
+    created_time = models.DateTimeField(auto_now_add=True)
