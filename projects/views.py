@@ -47,7 +47,7 @@ def project_collection_view(request):
             )
 
 
-@api_view(["GET"])
+@api_view(["GET", "PATCH", "DELETE"])
 @permission_classes([IsAuthenticated])
 def project_detail_view(request, project_id):
     try:
@@ -65,7 +65,37 @@ def project_detail_view(request, project_id):
             status=403,
         )
 
-    return Response(ProjectSerializer(project).data, status=200)
+    match request.method:
+        case "GET":
+            return Response(ProjectSerializer(project).data, status=200)
+
+        case "PATCH":
+            if request.user != project.author:
+                return Response(
+                    {"detail": "You are not the author of this project."},
+                    status=403,
+                )
+
+            serializer = ProjectSerializer(
+                project,
+                data=request.data,
+                partial=True,
+            )
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=400)
+
+            serializer.save()
+            return Response(serializer.data, status=200)
+
+        case "DELETE":
+            if request.user != project.author:
+                return Response(
+                    {"detail": "You are not the author of this project."},
+                    status=403,
+                )
+
+            project.delete()
+            return Response(status=204)
 
 
 @api_view(["GET", "POST"])
@@ -88,11 +118,22 @@ def project_contributors_collection_view(request, project_id):
 
     match request.method:
         case "GET":
-            contributors = Contributor.objects.filter(
-                project=project,
-            ).select_related("user")
-            serializer = ContributorSerializer(contributors, many=True)
-            return Response(serializer.data, status=200)
+            contributors = (
+                Contributor.objects.filter(project=project)
+                .select_related("user")
+                .order_by("-created_time")
+            )
+            paginator = PageNumberPagination()
+            paginator.page_size = 10
+            paginated_contributors = paginator.paginate_queryset(
+                contributors,
+                request,
+            )
+            serializer = ContributorSerializer(
+                paginated_contributors,
+                many=True,
+            )
+            return paginator.get_paginated_response(serializer.data)
 
         case "POST":
             if request.user != project.author:
