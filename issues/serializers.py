@@ -34,7 +34,9 @@ class IssueSerializer(ModelSerializer):
         ).exists()
 
         if not is_project_contributor:
-            raise serializers.ValidationError("This user is not a contributor to this project.")
+            raise serializers.ValidationError(
+                "This user is not a contributor to this project."
+            )
 
         return attrs
 
